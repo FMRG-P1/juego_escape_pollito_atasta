@@ -39,8 +39,8 @@ int main(){
 
         const Vector2 collision_0deg = (Vector2){player1.position.x+player1.radius, player1.position.y};
         const Vector2 collision_90deg = (Vector2){player1.position.x-player1.radius, player1.position.y};
-        const Vector2 collision_180deg = (Vector2){player1.position.x-player1.radius, player1.position.y};
-        const Vector2 collision_270deg = (Vector2){player1.position.x+player1.radius, player1.position.y};
+        const Vector2 collision_180deg = (Vector2){player1.position.x, player1.position.y-player1.radius};
+        const Vector2 collision_270deg = (Vector2){player1.position.x, player1.position.y+player1.radius};
         
         aplied_acceleration = (Vector2){0,9.8*player1.mass*FRAME_TIME};
 
@@ -63,6 +63,11 @@ int main(){
                 player1.velocity.x = 0;
                 player1.position.x += -1;
                 is_on_ground = true;
+            }
+
+            if(CheckCollisionPointRec(collision_180deg, platforms[i])){
+                player1.velocity.y = 0;
+                player1.position.y += 1;
             }
 
             if(CheckCollisionPointRec(collision_270deg, platforms[i])){
