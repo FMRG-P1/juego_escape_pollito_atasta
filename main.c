@@ -1,3 +1,4 @@
+// Entonces que pratsito
 #include<stdio.h>
 #include<raylib.h>
 
