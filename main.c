@@ -1,4 +1,5 @@
 // Entonces que pratsito
+//saquen a oscaaar del equipo
 #include<raylib.h>
 #include<raymath.h>
 #include<math.h>
