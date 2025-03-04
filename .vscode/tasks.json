@@ -11,7 +11,7 @@
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
                 "-I${fileDirname}\\raylib-5.5_win64_mingw-w64\\include",
-                "${fileDirname}\\raylib-5.5_win64_mingw-w64\\lib\\libraylib.a",
+                "-lraylib",
                 "-lgdi32",
                 "-lwinmm"
             ],
