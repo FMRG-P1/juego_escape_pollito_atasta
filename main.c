@@ -22,7 +22,8 @@ int main(){
     };
 
     const Rectangle platforms[] =  {
-        (Rectangle){200, 400, 100, 50}
+        (Rectangle){200, 400, 100, 50},
+        (Rectangle){0, 400, 10, 100}
     };
 
     while(!WindowShouldClose()){
@@ -49,16 +50,24 @@ int main(){
         }
 
         for(int i=0; i<(sizeof(platforms)/sizeof(Rectangle)); i++){
-            if(CheckCollisionPointRec(collision_0deg, platforms[i]) || CheckCollisionPointRec(collision_90deg, platforms[i])){
+            if(CheckCollisionPointRec(collision_90deg, platforms[i])){
                 aplied_acceleration.x = 0;
                 player1.velocity.x = 0;
+                player1.position.x += 1;
                 is_on_ground = true;
             }
 
-            if(CheckCollisionPointRec(collision_180deg, platforms[i])){
+            if(CheckCollisionPointRec(collision_0deg, platforms[i])){
+                aplied_acceleration.x = 0;
+                player1.velocity.x = 0;
+                player1.position.x += -1;
+                is_on_ground = true;
+            }
+
+            if(CheckCollisionPointRec(collision_270deg, platforms[i])){
                 aplied_acceleration.y = 0;
                 player1.velocity.y = 0;
-                //player1.position.y = platforms[i].y - player1.radius;
+                player1.position.y += -1;
                 is_on_ground = true;
             }
         }
