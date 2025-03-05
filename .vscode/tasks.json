@@ -3,7 +3,7 @@
         {
             "type": "cppbuild",
             "label": "C/C++: gcc.exe build active file",
-            "command": "C:\\MinGW\\bin\\gcc.exe",
+        "command": "C:/raylib/w64devkit/bin/gcc.exe",
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
@@ -16,7 +16,7 @@
                 "-lwinmm"
             ],
             "options": {
-                "cwd": "C:\\MinGW\\bin"
+                "cwd": "C:\\raylib\\w64devkit\\bin"
             },
             "problemMatcher": [
                 "$gcc"
