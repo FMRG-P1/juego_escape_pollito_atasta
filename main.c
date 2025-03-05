@@ -33,7 +33,7 @@ int main(){
     bool is_on_ground = false;
 
     while(!WindowShouldClose()){
-        const float COMMON_GROUND_FRICTION_COEFFICIENT = 0.8;
+        const float COMMON_GROUND_FRICTION_COEFFICIENT = 12;
         const float MOVEMENT_JUMP_SENSIBILITY = 20000;
         const float MOVEMENT_DISPLACEMENT_SENSIBILITY = 1000;
         const float FRAME_TIME = GetFrameTime();
@@ -52,10 +52,8 @@ int main(){
         if(is_touching_ground && !is_on_ground){
             player1.acceleration.y = 0;
             player1.velocity.y = 0;
-            player1.acceleration.x = 0;
-            player1.velocity.x = 0;
         }
-        if(is_on_ground){
+        if(is_touching_ground){
             if(IsKeyDown(KEY_SPACE)){
                 added_acceleration.y += -MOVEMENT_JUMP_SENSIBILITY*player1.mass;
                 is_touching_ground = false;
