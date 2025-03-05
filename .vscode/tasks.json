@@ -3,20 +3,21 @@
         {
             "type": "cppbuild",
             "label": "C/C++: gcc.exe build active file",
-        "command": "C:/raylib/w64devkit/bin/gcc.exe",
+            "command": "C:\\MinGW\\bin\\gcc.exe",
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
                 "${file}",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
-                "-I${fileDirname}\\raylib-5.5_win64_mingw-w64\\include",
+                "-IC:\\raylib\\raylib\\src",
                 "-lraylib",
+                "-lopengl32",
                 "-lgdi32",
                 "-lwinmm"
             ],
             "options": {
-                "cwd": "C:\\raylib\\w64devkit\\bin"
+                "cwd": "C:\\MinGW\\bin"
             },
             "problemMatcher": [
                 "$gcc"
