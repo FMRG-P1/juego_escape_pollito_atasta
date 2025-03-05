@@ -6,6 +6,8 @@
 #include<math.h>
 #include<stdio.h>
 
+#define METER_UNIT 100
+
 struct Player{
     Vector2 position;
     Vector2 velocity;
@@ -15,6 +17,7 @@ struct Player{
 };
 
 int main(){
+    SetTargetFPS(12);
     InitWindow(500, 500, "Hello World");
     Image imagen_jose_jose = LoadImage("./textures/JoseJose.jpeg");
     Texture2D textura_jose_jose = LoadTextureFromImage(imagen_jose_jose);
@@ -34,6 +37,60 @@ int main(){
 
     bool is_on_ground = false;
 
+    float acc = 0;
+    float TIME_DELTA_STEP = 0.01;
+
+#if 1
+    while(!WindowShouldClose()){
+        acc += GetFrameTime();
+
+        while(acc >= TIME_DELTA_STEP){
+            acc -= TIME_DELTA_STEP;
+            bool is_touching_ground = false;
+
+            if(player1.position.y + player1.radius >= GetScreenHeight()){
+                is_touching_ground = true;
+            }
+
+            if(is_touching_ground && !is_on_ground){
+                player1.acceleration.y = 0;
+                player1.velocity.y = 0;
+            }
+            if(is_touching_ground){
+                if(IsKeyDown(KEY_SPACE)){
+                    player1.velocity.y -= 5*METER_UNIT;
+                    is_touching_ground = false;
+                }
+            }
+    
+            is_on_ground = is_touching_ground;
+
+
+            Vector2 added_acceleration = {0,0};
+            if(!is_touching_ground){
+                added_acceleration.y += 9.8*player1.mass;
+            }
+
+            {
+                float movement_x_factor = is_touching_ground ? 1 : 0.7;
+                
+                if(IsKeyDown(KEY_LEFT)){ added_acceleration.x += -2*METER_UNIT*movement_x_factor; }
+                if(IsKeyDown(KEY_RIGHT)){ added_acceleration.x += 2*METER_UNIT*movement_x_factor; }
+            }
+
+            player1.acceleration = Vector2Add(player1.acceleration, Vector2Scale(added_acceleration, TIME_DELTA_STEP));
+            player1.velocity = Vector2Add(player1.velocity, Vector2Scale(added_acceleration, TIME_DELTA_STEP));
+            player1.position = Vector2Add(player1.position, Vector2Scale(player1.velocity, TIME_DELTA_STEP));
+        }
+
+        BeginDrawing();
+            ClearBackground(RAYWHITE);
+            DrawText(TextFormat("Acceleration: (%.2f, %.2f)", player1.acceleration.x, player1.acceleration.y), 100, 100, 20, BLACK);
+            DrawLineEx((Vector2){100, 100}, (Vector2){100+METER_UNIT,100}, 5, RED);
+            DrawCircle(player1.position.x, player1.position.y, player1.radius, RED);
+        EndDrawing();
+    }
+#else
     while(!WindowShouldClose()){
         const float COMMON_GROUND_FRICTION_COEFFICIENT = 12;
         const float MOVEMENT_JUMP_SENSIBILITY = 1500;
@@ -64,9 +121,8 @@ int main(){
             player1.velocity.y = 0;
         }
         if(is_touching_ground){
-            if(IsKeyDown(KEY_SPACE) && FRAME_TIME < 0.5){
-                added_acceleration.y += -MOVEMENT_JUMP_SENSIBILITY*player1.mass;
-                is_touching_ground = false;
+            if(IsKeyPressed(KEY_SPACE)){
+                player1.acceleration.y += MOVEMENT_JUMP_SENSIBILITY/player1.mass;
             }
         }
 
@@ -94,6 +150,7 @@ int main(){
             }
         EndDrawing();
     }
+#endif
 
     UnloadTexture(textura_jose_jose);
     UnloadImage(imagen_jose_jose);
