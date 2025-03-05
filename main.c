@@ -32,42 +32,6 @@ int main(){
     };
 
     while(!WindowShouldClose()){
-<<<<<<< HEAD
-        Vector2 added_acceleration = {0,0};
-        bool is_on_ground = false;
-        bool is_on_wall = false;
-
-        if(player1.position.y + player1.radius >= GetScreenHeight()){
-            is_on_ground = true;
-        }
-
-        if(!is_on_ground){
-            added_acceleration.y += 9.8*player1.mass; // Gravity
-        } else {
-            player1.acceleration.y = 0;
-            player1.velocity.y = 0;
-
-            const float COMMON_GROUND_FRICTION_COEFFICIENT = 40;
-            const float MOVEMENT_JUMP_SENSIBILITY = 40;
-            if(player1.velocity.x > 0){
-                added_acceleration.x += -9.8*COMMON_GROUND_FRICTION_COEFFICIENT;
-            }
-            if(player1.velocity.x < 0){
-                added_acceleration.x += 9.8*COMMON_GROUND_FRICTION_COEFFICIENT;
-            }
-
-            if(IsKeyPressed(KEY_SPACE)){
-                added_acceleration.y = -MOVEMENT_JUMP_SENSIBILITY;
-            }
-        }
-
-        const float MOVEMENT_SENSIBILITY = 10;
-          
-
-        player1.acceleration = Vector2Add(player1.acceleration, Vector2Scale(added_acceleration, GetFrameTime()));
-        player1.velocity = Vector2Add(player1.velocity, Vector2Scale(added_acceleration, GetFrameTime()));
-        player1.position = Vector2Add(player1.position, Vector2Scale(player1.velocity, GetFrameTime()));
-=======
         if(IsKeyPressed(KEY_F5)){
             player1.position = (Vector2){100,100};
             player1.velocity = (Vector2){0,0};
@@ -127,7 +91,6 @@ int main(){
         
         player1.velocity = Vector2Add(player1.velocity, aplied_acceleration);
         player1.position = Vector2Add(player1.position, Vector2Scale(player1.velocity, FRAME_TIME));
->>>>>>> parent of 8d43618 (Cambiado tasks.json SANTIAGO)
 
         BeginDrawing();
             ClearBackground(RAYWHITE);
