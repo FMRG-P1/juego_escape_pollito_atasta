@@ -266,9 +266,9 @@ bool collision_player_floor_simulate(struct Player* player, float floor_y){
 
 struct CollisionFlags level_test_collision(struct Player* player_current){
     const Rectangle platforms[] =  {
-        (Rectangle){200, -100, 100, 50},
         (Rectangle){0, -100, 10, 100},
-        (Rectangle){0, -200, 50, 40}
+        (Rectangle){0, -200, 50, 40},
+        (Rectangle){120, -100, 50, 30}
     };
 
     struct CollisionFlags flags = {false, false, false};
@@ -280,13 +280,13 @@ struct CollisionFlags level_test_collision(struct Player* player_current){
         flags.is_on_floor |= temp.is_on_floor;
         flags.is_on_wall |= temp.is_on_wall;
     }
+    
 
     return flags;
 }
 
 void level_test_draw(struct Player* player_current, Camera2D* camera, const float TIME_DELTA_STEP){
     const Rectangle platforms[] =  {
-        (Rectangle){200, -100, 100, 50},
         (Rectangle){0, -100, 10, 100},
         (Rectangle){0, -200, 50, 40}
     };
@@ -295,15 +295,11 @@ void level_test_draw(struct Player* player_current, Camera2D* camera, const floa
     BeginDrawing();
         ClearBackground(RAYWHITE);
 
+        DrawText("Prueba", 20, 20, 40, GREEN);
         DrawText(TextFormat("Posicion: (%.2f, %.2f)", player_current->position.x, player_current->position.y), 10, 85, 20, BLACK);
         DrawText(TextFormat("Acceleracion: (%.2f, %.2f)", player_current->acceleration.x, player_current->acceleration.y), 10, 100, 20, BLACK);
     BeginMode2D(*camera);
-        DrawLineV((Vector2){-10000, 0}, (Vector2){10000, 0}, BLACK);
-        DrawLineV((Vector2){0, -10000}, (Vector2){0, 10000}, BLACK);
-        for(int i=0; i<sizeof(platforms)/sizeof(Rectangle); i++){
-            DrawRectangleRec(platforms[i], BLACK);
-        }
-
+    
         Color player_color = BLACK;
         switch(player_current->state){
             case PLAYER_FALLING:
@@ -319,8 +315,26 @@ void level_test_draw(struct Player* player_current, Camera2D* camera, const floa
                 player_color = GREEN;
             break;
         }
-
         DrawCircle(player_current->position.x, player_current->position.y, player_current->radius, player_color);
+
+        float wall_transparency = 255;
+        Rectangle wall = (Rectangle){100, -500, 300, 500};
+        if(CheckCollisionCircleRec(player_current->position, player_current->radius, wall)){
+            wall_transparency = 100;
+        }
+
+        DrawRectangle(120, -100, 50, 30, BLACK);
+
+        DrawRectangleRec(wall, (Color){
+            130, 130, 130, wall_transparency
+        });
+
+
+        DrawLineV((Vector2){-10000, 0}, (Vector2){10000, 0}, BLACK);
+        DrawLineV((Vector2){0, -10000}, (Vector2){0, 10000}, BLACK);
+        for(int i=0; i<sizeof(platforms)/sizeof(Rectangle); i++){
+            DrawRectangleRec(platforms[i], BLACK);
+        }
     EndMode2D();
     EndDrawing();
 }
