@@ -68,19 +68,21 @@ int main(){
             const Vector2 collision_down_3 = (Vector2){player1.position.x, player1.position.y+player1.radius};
 
             frame_time_acumulator -= TIME_DELTA_STEP;
-            bool is_touching_ground = false;
-            bool is_touching_roof = false;
-            bool is_touching_left_wall = false;
-            bool is_touching_right_wall = false;
 
             // Determina colisiones
             if(player1.position.y + player1.radius >= 0){
-                is_touching_ground = true;
+                is_on_ground = true;
             }
 
             for(int i=0; i<sizeof(platforms)/sizeof(Rectangle); i++){
                 if(CheckCollisionPointRec(collision_down_1, platforms[i]) || CheckCollisionPointRec(collision_down_2, platforms[i]) || CheckCollisionPointRec(collision_down_3, platforms[i])){
-                    is_touching_ground = true;
+                    if(!is_on_ground){
+                        player1.acceleration.y = 0;
+                        player1.velocity.y = 0;
+        
+                        player1.acceleration.x *= 0.5;
+                    }
+                    is_on_ground = true;
                 }
 
                 if(CheckCollisionPointRec(collision_up_1, platforms[i]) || CheckCollisionPointRec(collision_up_2, platforms[i])){
@@ -103,18 +105,9 @@ int main(){
                 }
             }
 
-            if(is_touching_ground && !is_on_ground){
-                player1.acceleration.y = 0;
-                player1.velocity.y = 0;
-
-                player1.acceleration.x *= 0.5;
-            }
-    
-            is_on_ground = is_touching_ground;
-
             // Aplicar aceleraciones
             Vector2 added_acceleration = {0,0};
-            if(!is_touching_ground){
+            if(!is_on_ground){
                 added_acceleration.y += 9.8*player1.mass;
             } else {
                 const float friction_coefficient = 0.1;
@@ -131,7 +124,7 @@ int main(){
             }
 
             {
-                float movement_x_factor = is_touching_ground ? 1 : 0.7;
+                float movement_x_factor = is_on_ground ? 1 : 0.7;
                 
                 if(IsKeyDown(KEY_LEFT)){ added_acceleration.x += -2*METER_UNIT*movement_x_factor; }
                 if(IsKeyDown(KEY_RIGHT)){ added_acceleration.x += 2*METER_UNIT*movement_x_factor; }

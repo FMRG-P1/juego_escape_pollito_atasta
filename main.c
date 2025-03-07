@@ -5,15 +5,21 @@
 
 #define METER_UNIT 100
 
+struct CollisionFlags{
+    bool is_on_wall;
+    bool is_on_floor;
+    bool is_on_ceiling;
+};
 
 enum GameLevel_Kind{
     GAME_LEVEL_TEST
 };
 
 enum PlayerState_Kind{
-    PLAYER_WALINKG,
     PLAYER_FALLING,
-    PLAYER_IDDLE
+    PLAYER_IDDLE,
+    PLAYER_LANDING,
+    PLAYER_WALKING,
 };
 
 struct Player {
@@ -27,7 +33,7 @@ struct Player {
 };
 
 void level_test_draw(struct Player* player_current, Camera2D* camera, const float TIME_DELTA_STEP);
-bool level_test_collision(struct Player* player_current);
+struct CollisionFlags level_test_collision(struct Player* player_current);
 
 int main(){
     InitWindow(500, 500, "Pollos Pomoca");
@@ -60,11 +66,32 @@ int main(){
         while(frame_time_acumulator >= TIME_DELTA_STEP){
             frame_time_acumulator -= TIME_DELTA_STEP;
 
-            if(level_test_collision(&player1)){
-                player1.position = Vector2Lerp(player1.position, player1_prev.position, 0.5*TIME_DELTA_STEP); // Aproximacion
+            struct CollisionFlags collision_flags = level_test_collision(&player1);
+
+            if(!collision_flags.is_on_floor){
+                player1.state = PLAYER_FALLING;
             }
 
+            if(collision_flags.is_on_floor && player1.state == PLAYER_FALLING){
+                player1.state = PLAYER_LANDING;
+            }
+
+            if(!collision_flags.is_on_floor && player1.state == PLAYER_LANDING){
+                player1.state = PLAYER_IDDLE;
+            }
+
+            if(player1.velocity.x != 0 && player1.state == PLAYER_LANDING){
+                player1.state = PLAYER_WALKING;
+            }
+
+            // STATE MACHINE
             Vector2 acumulated_impulse = {0,0};
+            {                
+                float movement_x_factor = player1.state == PLAYER_FALLING ? 0.7 : 1;
+                if(IsKeyDown(KEY_LEFT)){ acumulated_impulse.x += -2*METER_UNIT*movement_x_factor; }
+                if(IsKeyDown(KEY_RIGHT)){ acumulated_impulse.x += 2*METER_UNIT*movement_x_factor; }
+            }
+
             if(player1.state == PLAYER_FALLING){
                 acumulated_impulse.y += 9.8*player1.mass;
             }else{                
@@ -79,15 +106,6 @@ int main(){
                     player1.velocity.y -= 5*METER_UNIT;
                     player1.state = PLAYER_FALLING;
                 }
-            }
-            {
-                if((IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_RIGHT)) && player1.state == PLAYER_IDDLE){
-                    player1.state = PLAYER_WALINKG;
-                }
-                
-                float movement_x_factor = player1.state == PLAYER_FALLING ? 0.7 : 1;
-                if(IsKeyDown(KEY_LEFT)){ acumulated_impulse.x += -2*METER_UNIT*movement_x_factor; }
-                if(IsKeyDown(KEY_RIGHT)){ acumulated_impulse.x += 2*METER_UNIT*movement_x_factor; }
             }
 
             player1_prev = player1;
@@ -121,7 +139,7 @@ int main(){
     CloseWindow();
 }
 
-bool collision_player_rectangle_simulate(struct Player* player, const Rectangle rectangle){
+struct CollisionFlags collision_player_rectangle_simulate(struct Player* player, const Rectangle rectangle){
     const Rectangle bounding_box = (Rectangle){player->position.x-player->radius, player->position.y-player->radius, player->radius*2, player->radius*2};
     const Vector2 collision_left_1 = (Vector2){player->position.x-player->radius, player->position.y-(player->radius*0.4)};
     const Vector2 collision_left_2 = (Vector2){player->position.x-player->radius, player->position.y+(player->radius*0.4)};
@@ -133,92 +151,81 @@ bool collision_player_rectangle_simulate(struct Player* player, const Rectangle 
     const Vector2 collision_down_1 = (Vector2){player->position.x-(player->radius*0.4), player->position.y+player->radius};
     const Vector2 collision_down_2 = (Vector2){player->position.x+(player->radius*0.4), player->position.y+player->radius};
     const Vector2 collision_down_3 = (Vector2){player->position.x, player->position.y+player->radius};
-    bool has_collided = false;
+
+    struct CollisionFlags flags = {false, false, false};
 
     if(CheckCollisionPointRec(collision_down_1, rectangle) || CheckCollisionPointRec(collision_down_2, rectangle) || CheckCollisionPointRec(collision_down_3, rectangle)){
         if(player->state == PLAYER_FALLING){
+            player->acceleration.x *= 0.5;
             player->acceleration.y = 0;
             player->velocity.y = 0;
-            player->acceleration.x *= 0.5;
         }
-        player->state = PLAYER_IDDLE;
-        has_collided = true;
+        flags.is_on_floor = true;
     }
 
     if(CheckCollisionPointRec(collision_up_1, rectangle) || CheckCollisionPointRec(collision_up_2, rectangle)){
         player->acceleration.y = 0;
         player->velocity.y = 0;
-
-        player->state = PLAYER_IDDLE;
-        has_collided = true;
+        flags.is_on_ceiling = true;
     }
 
     if(CheckCollisionPointRec(collision_left_1, rectangle) || CheckCollisionPointRec(collision_left_2, rectangle)){
         if(player->velocity.x < 0){
             player->acceleration.x = 0;
             player->velocity.x = 0;
-
-            player->state = PLAYER_IDDLE;
-            has_collided = true;
         }
+        flags.is_on_wall = true;
     }
 
     if(CheckCollisionPointRec(collision_right_1, rectangle) || CheckCollisionPointRec(collision_right_2, rectangle)){
         if(player->velocity.x > 0){
             player->acceleration.x = 0;
             player->velocity.x = 0;
-
-            player->state = PLAYER_IDDLE;
-            has_collided = true;
         }
+        flags.is_on_wall = true;
     }
 
-    if(!has_collided){
-        player->state = PLAYER_FALLING;
-    }
-
-    return has_collided;
+    return flags;
 }
 
 bool collision_player_floor_simulate(struct Player* player, float floor_y){
     if(player->position.y + player->radius >= floor_y){
-        player->acceleration.y = 0;
-        player->velocity.y = 0;
-
-        player->state = PLAYER_IDDLE;
+        if(player->state == PLAYER_FALLING){
+            player->acceleration.y = 0;
+            player->velocity.y = 0;
+        }
         return true;
     }
 
     return false;
 }
 
-bool level_test_collision(struct Player* player_current){
+struct CollisionFlags level_test_collision(struct Player* player_current){
     const Rectangle platforms[] =  {
         (Rectangle){200, -100, 100, 50},
         (Rectangle){0, -100, 10, 100},
-        (Rectangle){0, -200, 50, 50}
+        (Rectangle){0, -200, 50, 40}
     };
 
-    bool has_collided = false;
+    struct CollisionFlags flags = {false, false, false};
     // COLLISIONES
+    flags.is_on_floor |= collision_player_floor_simulate(player_current, 0);
+
     for(int i=0; i<sizeof(platforms)/sizeof(Rectangle); i++){
-        if(collision_player_rectangle_simulate(player_current, platforms[i])){
-            has_collided = true;
-        }
+        const struct CollisionFlags temp = collision_player_rectangle_simulate(player_current, platforms[i]);
+        flags.is_on_ceiling |= temp.is_on_ceiling;
+        flags.is_on_floor |= temp.is_on_floor;
+        flags.is_on_wall |= temp.is_on_wall;
     }
 
-    if(collision_player_floor_simulate(player_current, 0)){
-        has_collided = true;
-    }
-
-    return has_collided;
+    return flags;
 }
 
 void level_test_draw(struct Player* player_current, Camera2D* camera, const float TIME_DELTA_STEP){
     const Rectangle platforms[] =  {
         (Rectangle){200, -100, 100, 50},
         (Rectangle){0, -100, 10, 100},
-        (Rectangle){0, -200, 50, 50}
+        (Rectangle){0, -200, 50, 40}
     };
 
     // DIBUJO 
@@ -233,7 +240,7 @@ void level_test_draw(struct Player* player_current, Camera2D* camera, const floa
         for(int i=0; i<sizeof(platforms)/sizeof(Rectangle); i++){
             DrawRectangleRec(platforms[i], BLACK);
         }
-        DrawCircle(player_current->position.x, player_current->position.y, player_current->radius, RED);
+        DrawCircle(player_current->position.x, player_current->position.y, player_current->radius, player_current->state == PLAYER_FALLING ? DARKGRAY : RED);
     EndMode2D();
     EndDrawing();
 }
