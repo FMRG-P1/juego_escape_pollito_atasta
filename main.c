@@ -1,6 +1,3 @@
-// Entonces que pratsito
-//saquen a oscaaar del equipo
-// CARLOS AAAAAAAAAAA
 #include<raylib.h>
 #include<raymath.h>
 #include<math.h>
@@ -8,239 +5,242 @@
 
 #define METER_UNIT 100
 
-struct Player{
+struct CollisionFlags{
+    bool is_on_wall;
+    bool is_on_floor;
+    bool is_on_ceiling;
+};
+
+enum GameLevel_Kind{
+    GAME_LEVEL_TEST
+};
+
+enum PlayerState_Kind{
+    PLAYER_FALLING,
+    PLAYER_IDDLE,
+    PLAYER_LANDING,
+    PLAYER_WALKING,
+};
+
+struct Player {
     Vector2 position;
     Vector2 velocity;
     Vector2 acceleration;
     float mass;
     float radius;
+
+    enum PlayerState_Kind state;
 };
 
-const Rectangle platforms[] =  {
-    (Rectangle){200, -100, 100, 50},
-    (Rectangle){0, -100, 10, 100},
-    (Rectangle){0, -200, 50, 50}
-};
+void level_test_draw(struct Player* player_current, Camera2D* camera, const float TIME_DELTA_STEP);
+struct CollisionFlags level_test_collision(struct Player* player_current);
 
 int main(){
-    //SetTargetFPS(8);
-    InitWindow(500, 500, "Hello World");
-    Image imagen_jose_jose = LoadImage("./textures/JoseJose.jpeg");
-    Texture2D textura_jose_jose = LoadTextureFromImage(imagen_jose_jose);
+    InitWindow(500, 500, "Pollos Pomoca");
 
+    enum GameLevel_Kind game_scenario = GAME_LEVEL_TEST;
     struct Player player1 = {
         .position = (Vector2){100,-200},
         .velocity = (Vector2){0,0},
         .acceleration = (Vector2){0,0},
         .mass = 50,
-        .radius = 20
+        .radius = 20,
+        .state = PLAYER_IDDLE,
     };
 
-    Camera2D old_player_camera;
+    struct Player player1_prev = {0};
+
     Camera2D camera;
     camera.target = (Vector2){ player1.position.x, player1.position.y };
     camera.offset = (Vector2){ GetScreenWidth()/2.0f, GetScreenHeight()/2.0f };
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
 
-    bool is_on_ground = false;
 
     float frame_time_acumulator = 0;
     const float TIME_DELTA_STEP = 0.01;
-    bool free_mode = false;
 
     while(!WindowShouldClose()){
         frame_time_acumulator += GetFrameTime();
 
-        const Rectangle bounding_box = (Rectangle){player1.position.x-player1.radius, player1.position.y-player1.radius, player1.radius*2, player1.radius*2};
-        const Vector2 collision_left_1 = (Vector2){player1.position.x-player1.radius, player1.position.y-(player1.radius*0.4)};
-        const Vector2 collision_left_2 = (Vector2){player1.position.x-player1.radius, player1.position.y+(player1.radius*0.4)};
-        const Vector2 collision_right_1 = (Vector2){player1.position.x+player1.radius, player1.position.y-(player1.radius*0.4)};
-        const Vector2 collision_right_2 = (Vector2){player1.position.x+player1.radius, player1.position.y+(player1.radius*0.4)};
-
-<<<<<<< HEAD
-            level_test_collision(&player1);
-=======
-        const Vector2 collision_up_1 = (Vector2){player1.position.x-(player1.radius*0.4), player1.position.y-player1.radius};
-        const Vector2 collision_up_2 = (Vector2){player1.position.x+(player1.radius*0.4), player1.position.y-player1.radius};
-        const Vector2 collision_down_1 = (Vector2){player1.position.x-(player1.radius*0.4), player1.position.y+player1.radius};
-        const Vector2 collision_down_2 = (Vector2){player1.position.x+(player1.radius*0.4), player1.position.y+player1.radius};
-        const Vector2 collision_down_3 = (Vector2){player1.position.x, player1.position.y+player1.radius};
-
-        Vector2 prev_player_pos = player1.position;
-        while(frame_time_acumulator >= TIME_DELTA_STEP && !free_mode){
+        while(frame_time_acumulator >= TIME_DELTA_STEP){
             frame_time_acumulator -= TIME_DELTA_STEP;
-            bool is_touching_ground = false;
-            bool is_touching_roof = false;
-            bool is_touching_left_wall = false;
-            bool is_touching_right_wall = false;
 
-            // Determina colisiones
-            if(player1.position.y + player1.radius >= 0){
-                is_touching_ground = true;
-            }
->>>>>>> parent of 501f1d0 (Santiago: Cambio la estructura del motor)
+            struct CollisionFlags collision_flags = level_test_collision(&player1);
 
-            for(int i=0; i<sizeof(platforms)/sizeof(Rectangle); i++){
-                if(CheckCollisionPointRec(collision_down_1, platforms[i]) || CheckCollisionPointRec(collision_down_2, platforms[i]) || CheckCollisionPointRec(collision_down_3, platforms[i])){
-                    float up_lerp = 1;
-                    Vector2 lerped_player_pos = player1.position;
-
-                    /*while(up_lerp >= 0){
-                        lerped_player_pos = Vector2Lerp(prev_player_pos, player1.position, up_lerp);
-                        Vector2 lerped_collision_down_1 = (Vector2){lerped_player_pos.x-(player1.radius*0.4), lerped_player_pos.y+player1.radius};
-                        Vector2 lerped_collision_down_2 = (Vector2){lerped_player_pos.x+(player1.radius*0.4), lerped_collision_down_1.y+player1.radius};
-                        Vector2 lerped_collision_down_3 = (Vector2){lerped_player_pos.x, lerped_player_pos.y+player1.radius};
-
-                        if(!CheckCollisionPointRec(lerped_collision_down_1, platforms[i]) && !CheckCollisionPointRec(lerped_collision_down_2, platforms[i]) && !CheckCollisionPointRec(lerped_collision_down_3, platforms[i])){
-                            player1.position = lerped_player_pos;
-                            printf("DO LERPS\n");
-                        }
-                        
-                        up_lerp-=0.25;
-                    }*/
-
-                    is_touching_ground = true;
-                }
-
-                if(CheckCollisionPointRec(collision_up_1, platforms[i]) || CheckCollisionPointRec(collision_up_2, platforms[i])){
-                    is_touching_roof = true;
-                }
-
-                if(CheckCollisionPointRec(collision_left_1, platforms[i]) || CheckCollisionPointRec(collision_left_2, platforms[i])){
-                    is_touching_left_wall = true;
-                }
-
-                if(CheckCollisionPointRec(collision_right_1, platforms[i]) || CheckCollisionPointRec(collision_right_2, platforms[i])){
-                    is_touching_right_wall = true;
-                }
+            if(!collision_flags.is_on_floor){
+                player1.state = PLAYER_FALLING;
             }
 
-            // Aplicar fuerzas instantáneas
-            if(is_touching_ground && !is_on_ground){
-                player1.acceleration.y = 0;
-                player1.velocity.y = 0;
+            if(collision_flags.is_on_floor && player1.state == PLAYER_FALLING){
+                player1.state = PLAYER_LANDING;
+            }
 
-                player1.acceleration.x *= 0.5;
+            if(!collision_flags.is_on_floor && player1.state == PLAYER_LANDING){
+                player1.state = PLAYER_IDDLE;
             }
-            if(is_touching_roof){
-                player1.acceleration.y = 0;
-                player1.velocity.y = 0;
-            }
-            if(is_touching_left_wall && player1.velocity.x < 0){
-                player1.acceleration.x = 0;
-                player1.velocity.x = 0;
-            }
-            if(is_touching_right_wall && player1.velocity.x > 0){
-                player1.acceleration.x = 0;
-                player1.velocity.x = 0;
-            }
-            if(is_touching_ground){
-                if(IsKeyDown(KEY_SPACE)){
-                    player1.velocity.y -= 5*METER_UNIT;
-                    player1.acceleration.x *= 1.5;
-                    is_touching_ground = false;
-                }
-            }
-    
-            is_on_ground = is_touching_ground;
 
-            // Aplicar aceleraciones
-            Vector2 added_acceleration = {0,0};
-            if(!is_touching_ground){
-                added_acceleration.y += 9.8*player1.mass;
-            } else {
+            if(player1.velocity.x != 0 && player1.state == PLAYER_LANDING){
+                player1.state = PLAYER_WALKING;
+            }
+
+            // STATE MACHINE
+            Vector2 acumulated_impulse = {0,0};
+            {                
+                float movement_x_factor = player1.state == PLAYER_FALLING ? 0.7 : 1;
+                if(IsKeyDown(KEY_LEFT)){ acumulated_impulse.x += -2*METER_UNIT*movement_x_factor; }
+                if(IsKeyDown(KEY_RIGHT)){ acumulated_impulse.x += 2*METER_UNIT*movement_x_factor; }
+            }
+
+            if(player1.state == PLAYER_FALLING){
+                acumulated_impulse.y += 9.8*player1.mass;
+            }else{                
                 const float friction_coefficient = 0.1;
                 if(player1.velocity.x < 1 || player1.velocity.x > 1){
-                    added_acceleration.x += -friction_coefficient*9.8*player1.acceleration.x;
+                    acumulated_impulse.x += -friction_coefficient*9.8*player1.acceleration.x;
                 }else{
                     player1.acceleration.x = 0;
                 }
+
+                if(IsKeyDown(KEY_SPACE)){
+                    player1.velocity.y -= 5*METER_UNIT;
+                    player1.state = PLAYER_FALLING;
+                }
             }
 
-            {
-                float movement_x_factor = is_touching_ground ? 1 : 0.7;
-                
-                if(IsKeyDown(KEY_LEFT)){ added_acceleration.x += -2*METER_UNIT*movement_x_factor; }
-                if(IsKeyDown(KEY_RIGHT)){ added_acceleration.x += 2*METER_UNIT*movement_x_factor; }
-            }
-
-            // Computar movimiento
-            prev_player_pos = player1.position;
-            player1.acceleration = Vector2Add(player1.acceleration, Vector2Scale(added_acceleration, TIME_DELTA_STEP));
-            player1.velocity = Vector2Add(player1.velocity, Vector2Scale(added_acceleration, TIME_DELTA_STEP));
+            player1_prev = player1;
+            player1.acceleration = Vector2Add(player1.acceleration, Vector2Scale(acumulated_impulse, TIME_DELTA_STEP));
+            // NO! NO! NO ARREGLES ESTA LINEA, ESTA BIEN, NO!
+            player1.velocity = Vector2Add(player1.velocity, Vector2Scale(acumulated_impulse, TIME_DELTA_STEP));
             player1.position = Vector2Add(player1.position, Vector2Scale(player1.velocity, TIME_DELTA_STEP));
 
-            // TODO: ARREGLAR MOVIMIENTO CAMARA
             if(GetWorldToScreen2D(player1.position, camera).y > GetScreenHeight()+20){
                 camera.target.y += GetWorldToScreen2D(player1.position, camera).y+player1.radius -  GetScreenHeight()+10;
             }
             if(GetWorldToScreen2D(player1.position, camera).x < 0+20 && player1.velocity.x < 0){
                 camera.target.x += - 20;
             }
-
             if(GetWorldToScreen2D(player1.position, camera).x > GetScreenWidth()-20 && player1.velocity.x > 0){
                 camera.target.x += player1.radius + 20;
             }
-    
+
+            // CHECK COLLISION
+            // STATE PLAYER
+            // STATE ...
+            // CAMERA
+            // SIMULATE PHYSICS
+            // RENDER
         }
 
-        if(free_mode){
-            if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)){
-                Vector2 mouse_delta = GetMouseDelta();
-                camera.offset = Vector2Add(camera.offset, mouse_delta);
-            }
-
-            float mouse_wheel = GetMouseWheelMove();
-            camera.zoom += mouse_wheel/10;
-        }
-        if(IsKeyPressed(KEY_TAB)){
-            if(!free_mode){
-                old_player_camera = camera;
-            }
-            if(free_mode){
-                camera = old_player_camera;
-            }
-            free_mode = !free_mode;
-        }
-
-        BeginDrawing();
-            ClearBackground(RAYWHITE);
-            DrawText(TextFormat("%s (Presiona TAB)", free_mode ? "MODO LIBRE" : "MODO CAMARA NORMAL"), 10, 70, 20, BLACK);
-            DrawText(TextFormat("Posicion: (%.2f, %.2f)", player1.position.x, player1.position.y), 10, 85, 20, BLACK);
-            DrawText(TextFormat("Acceleracion: (%.2f, %.2f)", player1.acceleration.x, player1.acceleration.y), 10, 100, 20, BLACK);
-        BeginMode2D(camera);
-
-            DrawCircleLines(100,-200, 10, RED);
-            DrawText("Comienza aqui!!", 120, -200-5, 10, BLACK);
-            DrawLineV((Vector2){-1000, 0}, (Vector2){1000, 0}, BLACK);
-            DrawLineV((Vector2){0, -1000}, (Vector2){0, 1000}, BLACK);
-
-            
-            for(int i=0; i<sizeof(platforms)/sizeof(Rectangle); i++){
-                DrawRectangleRec(platforms[i], BLACK);
-            }
-            
-            DrawRectangleLines(player1.position.x-player1.radius, player1.position.y-player1.radius, player1.radius*2, player1.radius*2, RED);
-            DrawCircleV(collision_left_1, 2, MAROON);
-            DrawCircleV(collision_left_2, 2, MAROON);
-            DrawCircleV(collision_right_1, 2, MAROON);
-            DrawCircleV(collision_right_2, 2, MAROON);
-            
-            DrawCircleV(collision_up_1, 2, DARKGREEN);
-            DrawCircleV(collision_up_2, 2, DARKGREEN);
-            DrawCircleV(collision_down_2, 2, DARKGREEN);
-            DrawCircleV(collision_down_1, 2, DARKGREEN);
-            DrawCircleV(collision_down_3, 2, DARKGREEN);
-            DrawCircle(player1.position.x, player1.position.y, player1.radius, RED);
-            EndMode2D();
-        EndDrawing();
+        
+        level_test_draw(&player1, &camera, TIME_DELTA_STEP);
     }
 
-
-    UnloadTexture(textura_jose_jose);
-    UnloadImage(imagen_jose_jose);
     CloseWindow();
+}
 
-    return 0;
+struct CollisionFlags collision_player_rectangle_simulate(struct Player* player, const Rectangle rectangle){
+    const Rectangle bounding_box = (Rectangle){player->position.x-player->radius, player->position.y-player->radius, player->radius*2, player->radius*2};
+    const Vector2 collision_left_1 = (Vector2){player->position.x-player->radius, player->position.y-(player->radius*0.4)};
+    const Vector2 collision_left_2 = (Vector2){player->position.x-player->radius, player->position.y+(player->radius*0.4)};
+    const Vector2 collision_right_1 = (Vector2){player->position.x+player->radius, player->position.y-(player->radius*0.4)};
+    const Vector2 collision_right_2 = (Vector2){player->position.x+player->radius, player->position.y+(player->radius*0.4)};
+
+    const Vector2 collision_up_1 = (Vector2){player->position.x-(player->radius*0.4), player->position.y-player->radius};
+    const Vector2 collision_up_2 = (Vector2){player->position.x+(player->radius*0.4), player->position.y-player->radius};
+    const Vector2 collision_down_1 = (Vector2){player->position.x-(player->radius*0.4), player->position.y+player->radius};
+    const Vector2 collision_down_2 = (Vector2){player->position.x+(player->radius*0.4), player->position.y+player->radius};
+    const Vector2 collision_down_3 = (Vector2){player->position.x, player->position.y+player->radius};
+
+    struct CollisionFlags flags = {false, false, false};
+
+    if(CheckCollisionPointRec(collision_down_1, rectangle) || CheckCollisionPointRec(collision_down_2, rectangle) || CheckCollisionPointRec(collision_down_3, rectangle)){
+        if(player->state == PLAYER_FALLING){
+            player->acceleration.x *= 0.5;
+            player->acceleration.y = 0;
+            player->velocity.y = 0;
+        }
+        flags.is_on_floor = true;
+    }
+
+    if(CheckCollisionPointRec(collision_up_1, rectangle) || CheckCollisionPointRec(collision_up_2, rectangle)){
+        player->acceleration.y = 0;
+        player->velocity.y = 0;
+        flags.is_on_ceiling = true;
+    }
+
+    if(CheckCollisionPointRec(collision_left_1, rectangle) || CheckCollisionPointRec(collision_left_2, rectangle)){
+        if(player->velocity.x < 0){
+            player->acceleration.x = 0;
+            player->velocity.x = 0;
+        }
+        flags.is_on_wall = true;
+    }
+
+    if(CheckCollisionPointRec(collision_right_1, rectangle) || CheckCollisionPointRec(collision_right_2, rectangle)){
+        if(player->velocity.x > 0){
+            player->acceleration.x = 0;
+            player->velocity.x = 0;
+        }
+        flags.is_on_wall = true;
+    }
+
+    return flags;
+}
+
+bool collision_player_floor_simulate(struct Player* player, float floor_y){
+    if(player->position.y + player->radius >= floor_y){
+        if(player->state == PLAYER_FALLING){
+            player->acceleration.y = 0;
+            player->velocity.y = 0;
+        }
+        return true;
+    }
+
+    return false;
+}
+
+struct CollisionFlags level_test_collision(struct Player* player_current){
+    const Rectangle platforms[] =  {
+        (Rectangle){200, -100, 100, 50},
+        (Rectangle){0, -100, 10, 100},
+        (Rectangle){0, -200, 50, 40}
+    };
+
+    struct CollisionFlags flags = {false, false, false};
+    // COLLISIONES
+    flags.is_on_floor |= collision_player_floor_simulate(player_current, 0);
+
+    for(int i=0; i<sizeof(platforms)/sizeof(Rectangle); i++){
+        const struct CollisionFlags temp = collision_player_rectangle_simulate(player_current, platforms[i]);
+        flags.is_on_ceiling |= temp.is_on_ceiling;
+        flags.is_on_floor |= temp.is_on_floor;
+        flags.is_on_wall |= temp.is_on_wall;
+    }
+
+    return flags;
+}
+
+void level_test_draw(struct Player* player_current, Camera2D* camera, const float TIME_DELTA_STEP){
+    const Rectangle platforms[] =  {
+        (Rectangle){200, -100, 100, 50},
+        (Rectangle){0, -100, 10, 100},
+        (Rectangle){0, -200, 50, 40}
+    };
+
+    // DIBUJO 
+    BeginDrawing();
+        ClearBackground(RAYWHITE);
+
+        DrawText(TextFormat("Posicion: (%.2f, %.2f)", player_current->position.x, player_current->position.y), 10, 85, 20, BLACK);
+        DrawText(TextFormat("Acceleracion: (%.2f, %.2f)", player_current->acceleration.x, player_current->acceleration.y), 10, 100, 20, BLACK);
+    BeginMode2D(*camera);
+        DrawLineV((Vector2){-1000, 0}, (Vector2){1000, 0}, BLACK);
+        DrawLineV((Vector2){0, -1000}, (Vector2){0, 1000}, BLACK);
+        for(int i=0; i<sizeof(platforms)/sizeof(Rectangle); i++){
+            DrawRectangleRec(platforms[i], BLACK);
+        }
+        DrawCircle(player_current->position.x, player_current->position.y, player_current->radius, player_current->state == PLAYER_FALLING ? DARKGRAY : RED);
+    EndMode2D();
+    EndDrawing();
 }
