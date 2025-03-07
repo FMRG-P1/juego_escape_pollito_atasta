@@ -59,32 +59,48 @@ int main(){
 
     float frame_time_acumulator = 0;
     const float TIME_DELTA_STEP = 0.01;
+    bool free_mode = false;
 
     while(!WindowShouldClose()){
         frame_time_acumulator += GetFrameTime();
 
-        while(frame_time_acumulator >= TIME_DELTA_STEP){
+        while(frame_time_acumulator >= TIME_DELTA_STEP && !free_mode){
             frame_time_acumulator -= TIME_DELTA_STEP;
 
             struct CollisionFlags collision_flags = level_test_collision(&player1);
 
-            if(!collision_flags.is_on_floor){
-                player1.state = PLAYER_FALLING;
-            }
-
-            if(collision_flags.is_on_floor && player1.state == PLAYER_FALLING){
-                player1.state = PLAYER_LANDING;
-            }
-
-            if(!collision_flags.is_on_floor && player1.state == PLAYER_LANDING){
-                player1.state = PLAYER_IDDLE;
-            }
-
-            if(player1.velocity.x != 0 && player1.state == PLAYER_LANDING){
-                player1.state = PLAYER_WALKING;
-            }
-
             // STATE MACHINE
+            switch(player1.state){
+                case PLAYER_FALLING:
+                    if(collision_flags.is_on_floor){
+                        player1.state = PLAYER_LANDING;
+                    }
+                break;
+                case PLAYER_LANDING:
+                    if(collision_flags.is_on_floor){
+                        player1.state = PLAYER_IDDLE;
+                    }
+                break;
+                case PLAYER_IDDLE:
+                    if(!collision_flags.is_on_floor){
+                        player1.state = PLAYER_FALLING;
+                    }
+
+                    if(player1.velocity.x != 0){
+                        player1.state = PLAYER_WALKING;
+                    }
+                break;
+                case PLAYER_WALKING:
+                    if(!collision_flags.is_on_floor){
+                        player1.state = PLAYER_FALLING;
+                    }
+
+                    if(player1.velocity.x == 0){
+                        player1.state = PLAYER_IDDLE;
+                    }
+                break;
+            }
+
             Vector2 acumulated_impulse = {0,0};
             {                
                 float movement_x_factor = player1.state == PLAYER_FALLING ? 0.7 : 1;
@@ -104,6 +120,23 @@ int main(){
 
                 if(IsKeyDown(KEY_SPACE)){
                     player1.velocity.y -= 5*METER_UNIT;
+                    
+                    // TODO: Refactor if statement
+                    if(
+                        player1.state == PLAYER_LANDING && 
+                        !(IsKeyDown(KEY_LEFT) && IsKeyDown(KEY_RIGHT)) &&
+                        (
+                            (player1.acceleration.x < 0 && IsKeyDown(KEY_RIGHT)) ||
+                            (player1.acceleration.x > 0 && IsKeyDown(KEY_LEFT))
+                        )
+                    ){
+                        player1.velocity.x = -player1.velocity.x/4;
+                        player1.acceleration.x = -player1.acceleration.x/4;
+                        printf("BUNYHOP\n");
+                    } else {
+                        player1.velocity.x = player1.velocity.x*0.8;
+                    }
+
                     player1.state = PLAYER_FALLING;
                 }
             }
@@ -132,7 +165,38 @@ int main(){
             // RENDER
         }
 
-        
+
+        if(free_mode){
+            if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)){
+                camera.offset  = Vector2Add(camera.offset, GetMouseDelta());
+            }
+
+            camera.zoom += GetMouseWheelMove()/10;
+
+            if(IsKeyReleased(KEY_TAB)) {
+                free_mode = false;
+                camera.target = (Vector2){ player1.position.x, player1.position.y };
+                camera.offset = (Vector2){ GetScreenWidth()/2.0f, GetScreenHeight()/2.0f };
+                camera.rotation = 0.0f;
+                camera.zoom = 1.0f;
+                player1 = (struct Player){
+                    .position = (Vector2){100,-200},
+                    .velocity = (Vector2){0,0},
+                    .acceleration = (Vector2){0,0},
+                    .mass = 50,
+                    .radius = 20,
+                    .state = PLAYER_IDDLE,
+                };
+    
+                printf("FREE MODE DEACTIVATED\n");
+            }
+        } else {
+            if(IsKeyReleased(KEY_TAB)){
+                free_mode = true;
+                printf("FREE MODE ACTIVATED\n");
+            }
+        }
+
         level_test_draw(&player1, &camera, TIME_DELTA_STEP);
     }
 
@@ -208,7 +272,6 @@ struct CollisionFlags level_test_collision(struct Player* player_current){
     };
 
     struct CollisionFlags flags = {false, false, false};
-    // COLLISIONES
     flags.is_on_floor |= collision_player_floor_simulate(player_current, 0);
 
     for(int i=0; i<sizeof(platforms)/sizeof(Rectangle); i++){
@@ -235,12 +298,29 @@ void level_test_draw(struct Player* player_current, Camera2D* camera, const floa
         DrawText(TextFormat("Posicion: (%.2f, %.2f)", player_current->position.x, player_current->position.y), 10, 85, 20, BLACK);
         DrawText(TextFormat("Acceleracion: (%.2f, %.2f)", player_current->acceleration.x, player_current->acceleration.y), 10, 100, 20, BLACK);
     BeginMode2D(*camera);
-        DrawLineV((Vector2){-1000, 0}, (Vector2){1000, 0}, BLACK);
-        DrawLineV((Vector2){0, -1000}, (Vector2){0, 1000}, BLACK);
+        DrawLineV((Vector2){-10000, 0}, (Vector2){10000, 0}, BLACK);
+        DrawLineV((Vector2){0, -10000}, (Vector2){0, 10000}, BLACK);
         for(int i=0; i<sizeof(platforms)/sizeof(Rectangle); i++){
             DrawRectangleRec(platforms[i], BLACK);
         }
-        DrawCircle(player_current->position.x, player_current->position.y, player_current->radius, player_current->state == PLAYER_FALLING ? DARKGRAY : RED);
+
+        Color player_color = BLACK;
+        switch(player_current->state){
+            case PLAYER_FALLING:
+                player_color = DARKGRAY;
+                break;
+            case PLAYER_IDDLE:
+                player_color = BLUE;
+            break;
+            case PLAYER_WALKING:
+                player_color = RED;
+            break;
+            case PLAYER_LANDING:
+                player_color = GREEN;
+            break;
+        }
+
+        DrawCircle(player_current->position.x, player_current->position.y, player_current->radius, player_color);
     EndMode2D();
     EndDrawing();
 }
