@@ -262,6 +262,11 @@ bool collision_player_floor_simulate(struct Player* player, float floor_y){
 }
 
 struct CollisionFlags level_test_collision(struct Player* player_current){
+    const Rectangle platforms_jump[] = {
+        (Rectangle){100, -10, 50, 10},
+        (Rectangle){150, -50, 50, 10}
+    };
+
     const Rectangle platforms[] =  {
         (Rectangle){0, -100, 10, 100},
         (Rectangle){0, -200, 50, 40},
@@ -278,13 +283,15 @@ struct CollisionFlags level_test_collision(struct Player* player_current){
         flags.is_on_wall |= temp.is_on_wall;
     }
 
-    const struct CollisionFlags temp_supersalto = collision_player_rectangle_simulate(player_current, (Rectangle){100, -10, 50, 10});
-    flags.is_on_wall |= temp_supersalto.is_on_wall;
+    for(int i=0; i<sizeof(platforms_jump)/sizeof(Rectangle); i++){        
+        const struct CollisionFlags temp_supersalto = collision_player_rectangle_simulate(player_current, platforms_jump[i]);
+        flags.is_on_wall |= temp_supersalto.is_on_wall;
+        flags.is_on_ceiling |= temp.is_on_ceiling;
 
-
-    if(temp_supersalto.is_on_floor){
-        player_current->velocity.y = -400;
-        player_current->state = PLAYER_FALLING;
+        if(temp_supersalto.is_on_floor){
+            player_current->velocity.y = -400;
+            player_current->state = PLAYER_FALLING;
+        }
     }
 
     return flags;
@@ -294,6 +301,11 @@ void level_test_draw(struct Player* player_current, Camera2D* camera, const floa
     const Rectangle platforms[] =  {
         (Rectangle){0, -100, 10, 100},
         (Rectangle){0, -200, 50, 40}
+    };
+
+    const Rectangle platforms_jump[] = {
+        (Rectangle){100, -10, 50, 10},
+        (Rectangle){150, -50, 50, 10}
     };
 
     // DIBUJO 
@@ -330,8 +342,10 @@ void level_test_draw(struct Player* player_current, Camera2D* camera, const floa
             90, WHITE
         );
 
-        DrawRectangleLines(100, -10, 50, 10, BLACK);
-        DrawRectangleGradientH(100, -10, 50, 10, RAYWHITE, YELLOW);
+        for(int i=0; i<sizeof(platforms_jump)/sizeof(Rectangle); i++){
+            DrawRectangleGradientH(platforms_jump[i].x, platforms_jump[i].y, platforms_jump[i].width, platforms_jump[i].height, WHITE, YELLOW);
+            DrawRectangleLinesEx(platforms_jump[i], 1, BLACK);
+        }
 
         DrawLineV((Vector2){-10000, 0}, (Vector2){10000, 0}, BLACK);
         DrawLineV((Vector2){0, -10000}, (Vector2){0, 10000}, BLACK);
