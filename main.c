@@ -11,10 +11,6 @@ struct CollisionFlags{
     bool is_on_ceiling;
 };
 
-enum GameLevel_Kind{
-    GAME_LEVEL_TEST
-};
-
 enum PlayerState_Kind{
     PLAYER_FALLING,
     PLAYER_IDDLE,
@@ -35,11 +31,17 @@ struct Player {
 void level_test_draw(struct Player* player_current, Camera2D* camera, const float TIME_DELTA_STEP);
 struct CollisionFlags level_test_collision(struct Player* player_current);
 
+Texture2D g_texture_jose_jose;
+
+
 int main(){
     InitWindow(500, 500, "Pollos Pomoca");
 
-    enum GameLevel_Kind game_scenario = GAME_LEVEL_TEST;
-    struct Player player1 = {
+    // Declarar texturas
+    Image image_jose_jose = LoadImage("./textures/JoseJose.jpeg");
+    g_texture_jose_jose = LoadTextureFromImage(image_jose_jose);
+
+    const struct Player player_initial_state = {
         .position = (Vector2){100,-200},
         .velocity = (Vector2){0,0},
         .acceleration = (Vector2){0,0},
@@ -48,6 +50,7 @@ int main(){
         .state = PLAYER_IDDLE,
     };
 
+    struct Player player1 = player_initial_state;
     struct Player player1_prev = {0};
 
     Camera2D camera;
@@ -55,7 +58,6 @@ int main(){
     camera.offset = (Vector2){ GetScreenWidth()/2.0f, GetScreenHeight()/2.0f };
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
-
 
     float frame_time_acumulator = 0;
     const float TIME_DELTA_STEP = 0.01;
@@ -147,8 +149,11 @@ int main(){
             player1.velocity = Vector2Add(player1.velocity, Vector2Scale(acumulated_impulse, TIME_DELTA_STEP));
             player1.position = Vector2Add(player1.position, Vector2Scale(player1.velocity, TIME_DELTA_STEP));
 
-            if(GetWorldToScreen2D(player1.position, camera).y > GetScreenHeight()+20){
-                camera.target.y += GetWorldToScreen2D(player1.position, camera).y+player1.radius -  GetScreenHeight()+10;
+            if(GetWorldToScreen2D(player1.position, camera).y < 0+20){
+                camera.target.y += -20;
+            }
+            if(GetWorldToScreen2D(player1.position, camera).y > GetScreenHeight()-20){
+                camera.target.y += 20;
             }
             if(GetWorldToScreen2D(player1.position, camera).x < 0+20 && player1.velocity.x < 0){
                 camera.target.x += - 20;
@@ -179,27 +184,19 @@ int main(){
                 camera.offset = (Vector2){ GetScreenWidth()/2.0f, GetScreenHeight()/2.0f };
                 camera.rotation = 0.0f;
                 camera.zoom = 1.0f;
-                player1 = (struct Player){
-                    .position = (Vector2){100,-200},
-                    .velocity = (Vector2){0,0},
-                    .acceleration = (Vector2){0,0},
-                    .mass = 50,
-                    .radius = 20,
-                    .state = PLAYER_IDDLE,
-                };
-    
-                printf("FREE MODE DEACTIVATED\n");
+                player1 = player_initial_state;
             }
         } else {
             if(IsKeyReleased(KEY_TAB)){
                 free_mode = true;
-                printf("FREE MODE ACTIVATED\n");
             }
         }
 
         level_test_draw(&player1, &camera, TIME_DELTA_STEP);
     }
 
+    UnloadTexture(g_texture_jose_jose);
+    UnloadImage(image_jose_jose);
     CloseWindow();
 }
 
@@ -268,9 +265,9 @@ struct CollisionFlags level_test_collision(struct Player* player_current){
     const Rectangle platforms[] =  {
         (Rectangle){0, -100, 10, 100},
         (Rectangle){0, -200, 50, 40},
-        (Rectangle){120, -100, 50, 30}
     };
 
+    
     struct CollisionFlags flags = {false, false, false};
     flags.is_on_floor |= collision_player_floor_simulate(player_current, 0);
 
@@ -280,7 +277,15 @@ struct CollisionFlags level_test_collision(struct Player* player_current){
         flags.is_on_floor |= temp.is_on_floor;
         flags.is_on_wall |= temp.is_on_wall;
     }
-    
+
+    const struct CollisionFlags temp_supersalto = collision_player_rectangle_simulate(player_current, (Rectangle){100, -10, 50, 10});
+    flags.is_on_wall |= temp_supersalto.is_on_wall;
+
+
+    if(temp_supersalto.is_on_floor){
+        player_current->velocity.y = -400;
+        player_current->state = PLAYER_FALLING;
+    }
 
     return flags;
 }
@@ -317,18 +322,16 @@ void level_test_draw(struct Player* player_current, Camera2D* camera, const floa
         }
         DrawCircle(player_current->position.x, player_current->position.y, player_current->radius, player_color);
 
-        float wall_transparency = 255;
-        Rectangle wall = (Rectangle){100, -500, 300, 500};
-        if(CheckCollisionCircleRec(player_current->position, player_current->radius, wall)){
-            wall_transparency = 100;
-        }
+        DrawTexturePro(
+            g_texture_jose_jose, 
+            (Rectangle){0,0,g_texture_jose_jose.width, g_texture_jose_jose.height},
+            (Rectangle){0,0,30,30},
+            (Vector2){0,0},
+            90, WHITE
+        );
 
-        DrawRectangle(120, -100, 50, 30, BLACK);
-
-        DrawRectangleRec(wall, (Color){
-            130, 130, 130, wall_transparency
-        });
-
+        DrawRectangleLines(100, -10, 50, 10, BLACK);
+        DrawRectangleGradientH(100, -10, 50, 10, RAYWHITE, YELLOW);
 
         DrawLineV((Vector2){-10000, 0}, (Vector2){10000, 0}, BLACK);
         DrawLineV((Vector2){0, -10000}, (Vector2){0, 10000}, BLACK);
