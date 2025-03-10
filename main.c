@@ -286,7 +286,7 @@ struct CollisionFlags level_test_collision(struct Player* player_current){
     for(int i=0; i<sizeof(platforms_jump)/sizeof(Rectangle); i++){        
         const struct CollisionFlags temp_supersalto = collision_player_rectangle_simulate(player_current, platforms_jump[i]);
         flags.is_on_wall |= temp_supersalto.is_on_wall;
-        flags.is_on_ceiling |= temp.is_on_ceiling;
+        flags.is_on_ceiling |= temp_supersalto.is_on_ceiling;
 
         if(temp_supersalto.is_on_floor){
             player_current->velocity.y = -400;
